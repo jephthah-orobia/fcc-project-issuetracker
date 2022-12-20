@@ -11,14 +11,6 @@ const fccTestingRoutes = require('./routes/fcctesting.js');
 const runner = require('./test-runner');
 const mongoose = require('mongoose');
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log("Connected to database");
-  }).catch(e => {
-    console.error(e);
-    console.log("Failed to connect to database");
-  });
-
 let app = express();
 
 app.use('/public', express.static(process.cwd() + '/public'));
@@ -49,28 +41,34 @@ fccTestingRoutes(app);
 //Routing for API 
 apiRoutes(app);
 
+//404 Not Found Middleware
 app.use(function (req, res, next) {
   res.status(404)
     .type('text')
     .send('Not Found');
 });
 
-//404 Not Found Middleware
-
-//Start our server and tests!
-const listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
-  if (process.env.NODE_ENV === 'test') {
-    setTimeout(function () {
-      console.log('Running Tests...');
-      try {
-        runner.run();
-      } catch (e) {
-        console.log('Tests are not valid:');
-        console.error(e);
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log("Connected to database");
+    const listener = app.listen(process.env.PORT || 3000, function () {
+      console.log('Your app is listening on port ' + listener.address().port);
+      if (process.env.NODE_ENV === 'test') {
+        setTimeout(function () {
+          //Start our server and tests!
+          console.log('Running Tests...');
+          try {
+            runner.run();
+          } catch (e) {
+            console.log('Tests are not valid:');
+            console.error(e);
+          }
+        }, 3500);
       }
-    }, 3500);
-  }
-});
+    });
+  }).catch(e => {
+    console.error(e);
+    console.log("Failed to connect to database");
+  });
 
 module.exports = app; //for testing
