@@ -67,33 +67,40 @@ module.exports = function (app) {
         res.json({ error: 'missing _id' });
         return;
       }
-      let countfields = 0, to_update = {};
-      for (let prop in req.body)
-        if (prop !== '_id') {
-          to_update[prop] = req.body[prop]
-          countfields++;
-        }
-      if (countfields == 0) {
-        res.json({
-          error: 'no update field(s) sent',
-          _id: req.body._id
-        });
-        return;
-      }
-      Issue.updateOne(
+      Issue.findOne(
         { _id: req.body._id },
-        to_update,
-        (err) => {
+        (err, issue) => {
           if (err)
             res.json({
               error: 'could not update',
               _id: req.body._id
             });
-          else
-            res.json({
-              result: 'successfully updated',
-              _id: req.body._id
-            });
+          else {
+            let delta = 0;
+            for (let prop in req.body)
+              if (prop !== '_id' && req.body[prop] != issue[prop]) {
+                issue[prop] = req.body[prop];
+                delta++;
+              }
+            if (delta == 0)
+              res.json({
+                error: 'no update field(s) sent',
+                _id: req.body._id
+              });
+            else
+              issue.save(saveErr => {
+                if (saveErr)
+                  res.json({
+                    error: 'could not update',
+                    _id: req.body._id
+                  });
+                else
+                  res.json({
+                    result: 'successfully updated',
+                    _id: req.body._id
+                  });
+              });
+          }
         });
     })
 

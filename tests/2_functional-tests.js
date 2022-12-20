@@ -8,6 +8,7 @@ chai.use(chaiHttp);
 suite('Functional Tests', function () {
     let _id;
     test('Create an issue with every field: POST request to /api/issues/{project}', function (done) {
+        this.timeout(4000);
         chai.request(server)
             .post('/api/issues/someproject')
             .send({
@@ -199,7 +200,9 @@ suite('Functional Tests', function () {
         chai.request(server)
             .put('/api/issues/someproject')
             .send({
-                _id: _id
+                _id: _id,
+                open: true,
+                status_text: "there was some changes and needs to be reopened"
             }).end(function (err, res) {
                 assert.equal(res.status, 200);
                 let resjson;
