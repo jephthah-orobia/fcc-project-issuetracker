@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"description": "Issue Tracker Boilerplate",
 	"main": "server.js",
+	"author": "Jephthah M. Orobia <jephthah.orobia@gmail.com>",
 	"scripts": {
 		"start": "node server.js",
 		"test": "mocha --timeout 5000 --recursive --exit --ui tdd tests/"
@@ -18,7 +19,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/freeCodeCamp/boilerplate-project-issuetracker"
+		"url": "https://github.com/jephthah-orobia/fcc-project-issuetracker"
 	},
 	"keywords": [
 		"node",
