@@ -153,7 +153,7 @@ suite('Functional Tests', function () {
             .put('/api/issues/someproject')
             .send({
                 _id: _id,
-                open: false
+                created_by: 'some one else'
             }).end(function (err, res) {
                 assert.equal(res.status, 200);
                 let resjson;
@@ -201,6 +201,10 @@ suite('Functional Tests', function () {
             .put('/api/issues/someproject')
             .send({
                 _id: _id,
+                issue_title: '',
+                issue_text: '',
+                created_by: '',
+                assigned_to: '',
                 open: true,
                 status_text: "there was some changes and needs to be reopened"
             }).end(function (err, res) {

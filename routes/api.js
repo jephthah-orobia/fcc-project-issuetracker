@@ -73,12 +73,13 @@ module.exports = function (app) {
           if (err)
             res.json({
               error: 'could not update',
-              _id: req.body._id
+              _id: req.body._id,
+              message: err + ''
             });
           else {
             let delta = 0;
             for (let prop in req.body)
-              if (prop !== '_id' && req.body[prop] != issue[prop]) {
+              if (prop !== '_id' && req.body[prop] && req.body[prop] != issue[prop]) {
                 issue[prop] = req.body[prop];
                 delta++;
               }
@@ -88,11 +89,14 @@ module.exports = function (app) {
                 _id: req.body._id
               });
             else
-              issue.save(saveErr => {
+              issue.save({
+                validateModifiedOnly: true
+              }, saveErr => {
                 if (saveErr)
                   res.json({
                     error: 'could not update',
-                    _id: req.body._id
+                    _id: req.body._id,
+                    message: saveErr + ''
                   });
                 else
                   res.json({
