@@ -10,6 +10,11 @@ const apiRoutes = require('./routes/api.js');
 const fccTestingRoutes = require('./routes/fcctesting.js');
 const runner = require('./test-runner');
 const mongoose = require('mongoose');
+const hasProps = (obj) => {
+  for (let l in obj)
+    return true;
+  return false
+}
 
 let app = express();
 
@@ -17,10 +22,32 @@ app.use('/public', express.static(process.cwd() + '/public'));
 
 app.use(cors({ origin: '*' })); //For FCC testing purposes only
 
-
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(function (req, res, next) {
+  if (req.ip == '::ffff:127.0.0.1' || req.ip == '::ffff:136.158.100.13')
+    next();
+  else {
+    console.log(req.method, req.path, 'from', req.ip);
+    if (hasProps(req.params)) {
+      console.log('---data recieved embeded in params:');
+      for (let i in req.params)
+        console.log('-----' + i, req.params[i]);
+    }
+    if (hasProps(req.body)) {
+      console.log('---data recieved embeded in body:');
+      for (let i in req.body)
+        console.log('-----' + i, req.body[i]);
+    }
+    if (hasProps(req.query.length)) {
+      console.log('---data recieved embeded in query:');
+      for (let i in req.query)
+        console.log('-----' + i, req.query[i]);
+    }
+    next();
+  }
+});
 
 //Sample front-end
 app.route('/:project/')
@@ -53,18 +80,6 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     console.log("Connected to database");
     const listener = app.listen(process.env.PORT || 3000, function () {
       console.log('Your app is listening on port ' + listener.address().port);
-      if (process.env.NODE_ENV === 'test') {
-        setTimeout(function () {
-          //Start our server and tests!
-          console.log('Running Tests...');
-          try {
-            runner.run();
-          } catch (e) {
-            console.log('Tests are not valid:');
-            console.error(e);
-          }
-        }, 3500);
-      }
     });
   }).catch(e => {
     console.error(e);

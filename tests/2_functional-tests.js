@@ -125,7 +125,7 @@ suite('Functional Tests', function () {
     test('View issues on a project with multiple filters: GET request to /api/issues/{project}', function (done) {
         chai.request(server)
             .get('/api/issues/someject')
-            .send({ open: false, created_by: "some user" })
+            .send({ open: true, created_by: "some user" })
             .end(function (err, res) {
                 assert.equal(res.status, 200);
                 let resjson;
@@ -238,15 +238,17 @@ suite('Functional Tests', function () {
         chai.request(server)
             .delete('/api/issues/someproject')
             .send({
-                _id: _id
+                _id: _id,
+                issue_title: "some title"
             }).end(function (err, res) {
                 assert.equal(res.status, 200);
                 let resjson;
                 assert.doesNotThrow(() => resjson = JSON.parse(res.text));
                 assert.propertyVal(resjson, 'result', 'successfully deleted');
                 assert.propertyVal(resjson, "_id", _id);
-                done()
+                done();
             });
+
     });
 
     test('Delete an issue with an invalid _id: DELETE request to /api/issues/{project}', function (done) {
@@ -260,7 +262,21 @@ suite('Functional Tests', function () {
                 assert.doesNotThrow(() => resjson = JSON.parse(res.text));
                 assert.propertyVal(resjson, 'error', 'could not delete');
                 assert.propertyVal(resjson, "_id", '02139s3a');
-                done()
+                done();
+            });
+    });
+
+    test('Delete an issue with an invalid _id: DELETE request to /api/issues/{project} (2)', function (done) {
+        chai.request(server)
+            .delete('/api/issues/someproject')
+            .send({
+                _id: ' --'
+            }).end(function (err, res) {
+                assert.equal(res.status, 200);
+                let resjson;
+                assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                assert.propertyVal(resjson, 'error', 'could not delete');
+                done();
             });
     });
 
@@ -268,6 +284,33 @@ suite('Functional Tests', function () {
         chai.request(server)
             .delete('/api/issues/someproject')
             .end(function (err, res) {
+                assert.equal(res.status, 200);
+                let resjson;
+                assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                assert.propertyVal(resjson, 'error', 'missing _id');
+                done();
+            });
+    });
+
+    test('Delete an issue with missing _id: DELETE request to /api/issues/{project} (2)', function (done) {
+        chai.request(server)
+            .delete('/api/issues/someproject')
+            .send({
+                _id: ''
+            }).end(function (err, res) {
+                assert.equal(res.status, 200);
+                let resjson;
+                assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                assert.propertyVal(resjson, 'error', 'missing _id');
+                done();
+            });
+    });
+    test('Delete an issue with missing _id: DELETE request to /api/issues/{project} (3)', function (done) {
+        chai.request(server)
+            .delete('/api/issues/someproject')
+            .send({
+                open: true
+            }).end(function (err, res) {
                 assert.equal(res.status, 200);
                 let resjson;
                 assert.doesNotThrow(() => resjson = JSON.parse(res.text));

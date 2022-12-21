@@ -41,7 +41,7 @@ module.exports = function (app) {
             else if (!proj)
               new Project({
                 name: project,
-                issues: issue._id
+                issues: { $contains: issue._id }
               }).save((err2, newProj) => {
                 if (err2)
                   res.json({ error: err2 + '' })
@@ -63,67 +63,99 @@ module.exports = function (app) {
     })
 
     .put(function (req, res) {
-      if (!req.body._id) {
+      // check if _id is available
+      if (!req.body._id || req.body._id == '')
         res.json({ error: 'missing _id' });
-        return;
-      }
-      Issue.findOne(
-        { _id: req.body._id },
-        (err, issue) => {
-          if (err)
+      else
+        Project.findOne({
+          name: req.params.project,
+          issues: req.body._id
+        }, (fpEr, project) => {
+          if (fpEr || !project)
             res.json({
               error: 'could not update',
               _id: req.body._id,
-              message: err + ''
+              message: fpEr ? fpEr + '' : 'not a valid id'
             });
-          else {
-            let delta = 0;
-            for (let prop in req.body)
-              if (prop !== '_id' && req.body[prop] && req.body[prop] != issue[prop]) {
-                issue[prop] = req.body[prop];
-                delta++;
-              }
-            if (delta == 0)
-              res.json({
-                error: 'no update field(s) sent',
-                _id: req.body._id
-              });
-            else
-              issue.save({
-                validateModifiedOnly: true
-              }, saveErr => {
-                if (saveErr)
+          else
+            Issue.findOne(
+              { _id: req.body._id },
+              (err, issue) => {
+                if (err || !issue) {
                   res.json({
                     error: 'could not update',
                     _id: req.body._id,
-                    message: saveErr + ''
+                    message: err ? err + '' : 'not a valid id'
                   });
-                else
-                  res.json({
-                    result: 'successfully updated',
-                    _id: req.body._id
-                  });
+                }
+                else {
+                  let delta = 0;
+                  for (let prop in req.body)
+                    if (prop !== '_id' && req.body[prop] && issue[prop] && req.body[prop] != issue[prop]) {
+                      issue[prop] = req.body[prop];
+                      delta++;
+                    }
+                  if (delta == 0)
+                    res.json({
+                      error: 'no update field(s) sent',
+                      _id: req.body._id
+                    });
+                  else
+                    issue.save({
+                      validateModifiedOnly: true
+                    }, saveErr => {
+                      if (saveErr)
+                        res.json({
+                          error: 'could not update',
+                          _id: req.body._id,
+                          message: saveErr + ''
+                        });
+                      else
+                        res.json({
+                          result: 'successfully updated',
+                          _id: req.body._id
+                        });
+                    });
+                }
               });
-          }
         });
+
+
     })
 
     .delete(function (req, res) {
-      if (!req.body._id)
+      if (!req.body._id || req.body._id == '')
         res.json({ error: 'missing _id' });
       else
-        Issue.deleteOne({ _id: req.body._id }, (err) => {
-          if (err)
+        Project.findOneAndUpdate({
+          name: req.params.project,
+          issues: req.body._id
+        }, {
+          $pull: { issues: req.body._id }
+        }, (upErr, proj) => {
+          if (upErr || !proj)
             res.json({
               error: 'could not delete',
-              _id: req.body._id
+              _id: req.body._id,
+              message: upErr ? upErr + '' : 'proj not found'
             });
           else
-            res.json({
-              result: 'successfully deleted',
+            Issue.deleteOne({
               _id: req.body._id
-            });
+            }, (delErr) => {
+              if (delErr)
+                res.json({
+                  error: 'could not delete',
+                  _id: req.body._id,
+                  message: delErr + ''
+                });
+              else
+                res.json({
+                  result: 'successfully deleted',
+                  _id: req.body._id
+                });
+
+            })
         });
     });
-
 };
