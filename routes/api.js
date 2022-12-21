@@ -75,8 +75,7 @@ module.exports = function (app) {
           if (fpEr || !project)
             res.json({
               error: 'could not update',
-              _id: req.body._id,
-              message: fpEr ? fpEr + '' : 'not a valid id'
+              _id: req.body._id
             });
           else
             Issue.findOne(
@@ -85,8 +84,7 @@ module.exports = function (app) {
                 if (err || !issue) {
                   res.json({
                     error: 'could not update',
-                    _id: req.body._id,
-                    message: err ? err + '' : 'not a valid id'
+                    _id: req.body._id
                   });
                 }
                 else {
@@ -108,8 +106,7 @@ module.exports = function (app) {
                       if (saveErr)
                         res.json({
                           error: 'could not update',
-                          _id: req.body._id,
-                          message: saveErr + ''
+                          _id: req.body._id
                         });
                       else
                         res.json({
@@ -137,8 +134,7 @@ module.exports = function (app) {
           if (upErr || !proj)
             res.json({
               error: 'could not delete',
-              _id: req.body._id,
-              message: upErr ? upErr + '' : 'proj not found'
+              _id: req.body._id
             });
           else
             Issue.deleteOne({
@@ -147,8 +143,7 @@ module.exports = function (app) {
               if (delErr)
                 res.json({
                   error: 'could not delete',
-                  _id: req.body._id,
-                  message: delErr + ''
+                  _id: req.body._id
                 });
               else
                 res.json({
