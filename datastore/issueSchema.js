@@ -17,8 +17,14 @@ const issueSchema = new Schema({
         type: Boolean,
         default: true
     },
-    assigned_to: String,
-    status_text: String,
+    assigned_to: {
+        type: String,
+        default: ""
+    },
+    status_text: {
+        type: String,
+        default: ""
+    },
     created_on: {
         type: Date,
         default: Date.now
@@ -31,10 +37,6 @@ const issueSchema = new Schema({
     collection: 'issues'
 });
 
-issueSchema.pre('save', function (next) {
-    this.updated_on = new Date();
-    next();
-});
 
 issueSchema.pre('update', function (next) {
     this.updated_on = new Date();
