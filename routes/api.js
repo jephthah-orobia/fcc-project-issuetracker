@@ -89,7 +89,7 @@ module.exports = function (app) {
                 else {
                   let delta = 0;
                   for (let prop in req.body)
-                    if (prop !== '_id' && req.body[prop] && issue[prop] && req.body[prop] != issue[prop]) {
+                    if (prop !== '_id' && req.body[prop] && (issue[prop] == '' || req.body[prop] != issue[prop])) {
                       issue[prop] = req.body[prop];
                       delta++;
                     }
