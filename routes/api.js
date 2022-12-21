@@ -37,29 +37,29 @@ module.exports = function (app) {
         else
           Project.findOne({ name: project },
             (err1, proj) => {
-            if (err1)
-              res.json({ error: err1 + '' });
-            else if (!proj)
-              new Project({
-                name: project,
-                issues: { $contains: issue._id }
-              }).save((err2, newProj) => {
-                if (err2)
-                  res.json({ error: err2 + '' })
-                else
-                  res.json(issue);
-              });
-            else {
-              proj.issues.push(issue._id);
-              proj.save((err3, doc) => {
-                if (err3)
-                  res.json({ error: err3 + '' });
-                else
-                  res.json(issue);
+              if (err1)
+                res.json({ error: err1 + '' });
+              else if (!proj)
+                new Project({
+                  name: project,
+                  issues: issue._id
+                }).save((err2, newProj) => {
+                  if (err2)
+                    res.json({ error: err2 + '' })
+                  else
+                    res.json(issue);
+                });
+              else {
+                proj.issues.push(issue._id);
+                proj.save((err3, doc) => {
+                  if (err3)
+                    res.json({ error: err3 + '' });
+                  else
+                    res.json(issue);
 
-              });
-            }
-          });
+                });
+              }
+            });
       });
     })
 
