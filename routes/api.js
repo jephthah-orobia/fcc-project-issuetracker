@@ -78,8 +78,7 @@ module.exports = function (app) {
               _id: req.body._id
             });
           else
-            Issue.findOne(
-              { _id: req.body._id },
+            Issue.findById(req.body._id,
               (err, issue) => {
                 if (err || !issue) {
                   res.json({
@@ -100,9 +99,7 @@ module.exports = function (app) {
                       _id: req.body._id
                     });
                   else
-                    issue.save({
-                      validateModifiedOnly: true
-                    }, saveErr => {
+                    issue.save(saveErr => {
                       if (saveErr)
                         res.json({
                           error: 'could not update',
