@@ -37,6 +37,10 @@ const issueSchema = new Schema({
     collection: 'issues'
 });
 
+issueSchema.pre('save', function (next) {
+    this.updated_on = new Date();
+    next();
+});
 
 issueSchema.pre('update', function (next) {
     this.updated_on = new Date();

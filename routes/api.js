@@ -35,7 +35,8 @@ module.exports = function (app) {
         else if (err)
           res.json({ error: '' + err });
         else
-          Project.findOne({ name: project }, (err1, proj) => {
+          Project.findOne({ name: project },
+            (err1, proj) => {
             if (err1)
               res.json({ error: err1 + '' });
             else if (!proj)
