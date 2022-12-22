@@ -11,6 +11,14 @@ const projectsSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Issue"
     }]
+}, {
+    collection: 'projects',
+    toJSON: {
+        versionKey: false
+    },
+    toObject: {
+        versionKey: false
+    }
 });
 
 module.exports = model('Project', projectsSchema);

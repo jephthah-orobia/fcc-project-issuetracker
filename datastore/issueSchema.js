@@ -34,7 +34,13 @@ const issueSchema = new Schema({
         default: Date.now
     }
 }, {
-    collection: 'issues'
+    collection: 'issues',
+    toJSON: {
+        versionKey: false
+    },
+    toObject: {
+        versionKey: false
+    }
 });
 
 issueSchema.pre('save', function (next) {
