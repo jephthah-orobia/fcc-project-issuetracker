@@ -178,6 +178,7 @@ suite('Functional Tests', function () {
                     assert.equal(res.status, 200);
                     let resjson;
                     assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                    assert.hasAllKeys(resjson, ['result', '_id']);
                     assert.propertyVal(resjson, "result", "successfully updated");
                     assert.propertyVal(resjson, "_id", _id);
                     done();
@@ -193,8 +194,8 @@ suite('Functional Tests', function () {
                     assert.equal(res.status, 200);
                     let resjson;
                     assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                    assert.hasAllKeys(resjson, ['error']);
                     assert.propertyVal(resjson, 'error', 'missing _id');
-                    assert.notProperty(resjson, "_id");
                     done();
                 });
         });
@@ -203,17 +204,12 @@ suite('Functional Tests', function () {
             chai.request(server)
                 .put('/api/issues/someproject')
                 .send({
-                    _id: _id,
-                    issue_title: '',
-                    issue_text: '',
-                    created_by: '',
-                    assigned_to: '',
-                    open: true,
-                    status_text: "there was some changes and needs to be reopened"
+                    _id: _id
                 }).end(function (err, res) {
                     assert.equal(res.status, 200);
                     let resjson;
                     assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                    assert.hasAllKeys(resjson, ['error', '_id']);
                     assert.propertyVal(resjson, 'error', 'no update field(s) sent');
                     assert.propertyVal(resjson, "_id", _id);
                     done();
@@ -231,6 +227,7 @@ suite('Functional Tests', function () {
                     assert.equal(res.status, 200);
                     let resjson;
                     assert.doesNotThrow(() => resjson = JSON.parse(res.text));
+                    assert.hasAllKeys(resjson, ['error', '_id']);
                     assert.propertyVal(resjson, 'error', 'could not update');
                     assert.propertyVal(resjson, "_id", 'abc');
                     done();
