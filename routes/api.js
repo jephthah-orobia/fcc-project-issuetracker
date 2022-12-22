@@ -80,7 +80,7 @@ module.exports = function (app) {
           else
             Issue.findById(req.body._id,
               (err, issue) => {
-                if (err || !issue) {
+                if (err || !issue || !issue.open) {
                   res.json({
                     error: 'could not update',
                     _id: req.body._id
