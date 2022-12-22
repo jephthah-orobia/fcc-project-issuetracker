@@ -50,7 +50,7 @@ module.exports = function (app) {
                     res.json(issue);
                 });
               else {
-                proj.issues.push(issue._id);
+                proj.issues.unshift(issue._id);
                 proj.save((err3, doc) => {
                   if (err3)
                     res.json({ error: err3 + '' });
@@ -90,7 +90,8 @@ module.exports = function (app) {
                   for (let prop in req.body)
                     if (!(prop in ['_id', 'created_on', 'updated_on'])
                       && (
-                        (typeof req.body[prop] == 'string' && req.body[prop] != '')
+                        (typeof req.body[prop] == 'string' && req.body[prop] != ''
+                          && prop in issue && req.body[prop] != issue[prop])
                         || (prop == 'open' && typeof req.body.open == 'boolean'
                           && req.body.open != issue.open)
                       ))

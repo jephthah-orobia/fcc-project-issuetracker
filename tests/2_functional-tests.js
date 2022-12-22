@@ -218,18 +218,16 @@ suite('Functional Tests', function () {
 
         test('Update an issue with an invalid _id: PUT requrest to /api/issues/{project}', function (done) {
             chai.request(server)
-                .put('/api/issues/someproject')
+                .put('/api/issues/someproject1')
                 .send({
-                    _id: 'abc',
-                    open: false,
-                    status_text: 'some changes'
+                    _id: _id,
                 }).end(function (err, res) {
                     assert.equal(res.status, 200);
                     let resjson;
                     assert.doesNotThrow(() => resjson = JSON.parse(res.text));
                     assert.hasAllKeys(resjson, ['error', '_id']);
                     assert.propertyVal(resjson, 'error', 'could not update');
-                    assert.propertyVal(resjson, "_id", 'abc');
+                    assert.propertyVal(resjson, "_id", _id);
                     done();
                 });
         });
@@ -495,8 +493,8 @@ suite('Functional Tests', function () {
                             assert.isTrue(iss.open, true);
                             project1_issues.push(iss);
                         }
-                        assert.propertyVal(issues[0], '_id', issue1._id);
-                        assert.propertyVal(issues[1], '_id', issue2._id);
+                        assert.propertyVal(issues[1], '_id', issue1._id);
+                        assert.propertyVal(issues[0], '_id', issue2._id);
                         done();
                     });
             });
