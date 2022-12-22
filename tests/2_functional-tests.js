@@ -571,7 +571,7 @@ suite('Functional Tests', function () {
                     });
             });
 
-            test('update issue5, set open to false', function (done) {
+            test('close issue', function (done) {
                 chai.request(server).put('/api/issues/' + project2)
                     .send({ _id: issue5._id, open: false })
                     .end(function (err, res) {
@@ -586,15 +586,15 @@ suite('Functional Tests', function () {
                     });
             });
 
-            test('update issue5, set open to false but must fail', function (done) {
+            test('a closed issue cannot be updated', function (done) {
                 chai.request(server).put('/api/issues/' + project2)
-                    .send({ _id: issue5._id, open: false })
+                    .send({ _id: issue5._id, issue_title: "new title" })
                     .end(function (err, res) {
                         assert.equal(res.status, 200);
                         let result;
                         assert.doesNotThrow(() => result = JSON.parse(res.text));
                         assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'no update field(s) sent');
+                        assert.propertyVal(result, 'error', 'could not update');
                         assert.propertyVal(result, '_id', issue5._id);
                         done();
                     });
