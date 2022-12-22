@@ -87,13 +87,15 @@ module.exports = function (app) {
                   });
                 }
                 else {
-                  let delta = 0;
                   for (let prop in req.body)
-                    if (prop !== '_id' && req.body[prop] && (issue[prop] == '' || req.body[prop] != issue[prop])) {
+                    if (!(prop in ['_id', 'created_on', 'updated_on'])
+                      && (
+                        (typeof req.body[prop] == 'string' && req.body[prop] != '')
+                        || (prop == 'open' && typeof req.body.open == 'boolean'
+                          && req.body.open != issue.open)
+                      ))
                       issue[prop] = req.body[prop];
-                      delta++;
-                    }
-                  if (delta == 0)
+                  if (!issue.isModified())
                     res.json({
                       error: 'no update field(s) sent',
                       _id: req.body._id
