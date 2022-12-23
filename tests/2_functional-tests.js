@@ -146,12 +146,17 @@ suite("Functional Testing", function () {
                             let result;
                             assert.doesNotThrow(() => result = JSON.parse(res.text));
                             assert.isArray(result);
-                            console.log('done checking #4');
                             assert.isNotEmpty(result);
                             assert.equal(result.length, 3, res.text);
                             done();
+                        }).catch(e => {
+                            res.json({ error: e + '' });
+                            done();
                         })
-                );
+                ).catch(e => {
+                    res.json({ error: e + '' });
+                    done();
+                });
         });
 
 
@@ -192,27 +197,32 @@ suite("Functional Testing", function () {
                             assert.doesNotThrow(() => result = JSON.parse(res.text));
                             assert.isArray(result);
                             assert.isNotEmpty(result);
-                            console.log(res.text);
                             assert.equal(result.length, 3);
                             for (let issue of result) {
                                 for (let prop in get_one_filter)
                                     assert.equal(issue[prop], get_multifilter[prop]);
                             }
                             done();
-                        }));
+                        }).catch(e => {
+                            res.json({ error: e + '' });
+                            done();
+                        })
+                ).catch(e => {
+                    res.json({ error: e + '' });
+                    done();
+                });
         });
 
     test('#6 View issues on a project with multiple filter',
         function (done) {
-
-            chai.request(server).get('/api/issues/' + filter_test + '?' + new URLSearchParams(get_multifilter).toString())
+            chai.request(server)
+                .get('/api/issues/' + filter_test + '?' + new URLSearchParams(get_multifilter).toString())
                 .end((err, res) => {
                     assert.equal(res.status, 200);
                     let result;
                     assert.doesNotThrow(() => result = JSON.parse(res.text));
                     assert.isArray(result);
                     assert.isNotEmpty(result);
-                    console.log(res.text);
                     assert.equal(result.length, 2);
                     for (let issue of result) {
                         for (let prop in get_multifilter)

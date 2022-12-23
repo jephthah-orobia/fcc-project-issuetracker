@@ -65,7 +65,7 @@ module.exports = function (app) {
               if (err1 &&
                 (err1 instanceof Error.VersionError
                   || err1.code == 11000) && count < 5)
-                setTimeout(() => findProject(++count, issue), 500);
+                setTimeout(() => findProject(++count, issue), 50);
               else if (err1)
                 sendError(err1);
               else if (issue)
