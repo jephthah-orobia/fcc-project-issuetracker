@@ -40,7 +40,7 @@ app.use(function (req, res, next) {
       for (let i in req.body)
         console.log('-----' + i, req.body[i]);
     }
-    if (hasProps(req.query.length)) {
+    if (hasProps(req.query)) {
       console.log('---data recieved embeded in query:');
       for (let i in req.query)
         console.log('-----' + i, req.query[i]);
