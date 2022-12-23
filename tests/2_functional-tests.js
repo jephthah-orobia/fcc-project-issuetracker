@@ -3,6 +3,7 @@ const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 const mongoose = require('mongoose');
+const fcctesting = require('../routes/fcctesting');
 
 chai.use(chaiHttp);
 
@@ -113,19 +114,6 @@ suite("Functional Testing", function () {
                 });
         });
 
-    const get_issues_test = [{
-        issue_text: 'Get Issues Test',
-        created_by: 'fCC',
-        issue_title: 'Faux Issue 1'
-    }, {
-        issue_text: 'Get Issues Test',
-        created_by: 'fCC',
-        issue_title: 'Faux Issue 2',
-    }, {
-        issue_text: 'Get Issues Test',
-        created_by: 'fCC',
-        issue_title: 'Faux Issue 3',
-    }];
 
     const post_issue = (issue, project) => new Promise((res, rej) =>
         chai.request(server)
@@ -134,27 +122,17 @@ suite("Functional Testing", function () {
             .then(d => res(d))
             .catch(e => rej(e)));
 
-    const get_test = 'get_test' + Math.random();
     test('#4 check project get_test',
         function (done) {
-            Promise.all(get_issues_test.map(issue => post_issue(issue, get_test)))
-                .then(() =>
-                    chai.request(server).get('/api/issues/' + get_test)
-                        .then(res => {
-                            assert.propertyVal(res, 'status', 200);
-                            assert.property(res, 'text');
-                            let result;
-                            assert.doesNotThrow(() => result = JSON.parse(res.text));
-                            assert.isArray(result);
-                            assert.isNotEmpty(result);
-                            assert.equal(result.length, 3, res.text);
-                            done();
-                        }).catch(e => {
-                            assert.fail(e + '');
-                            done();
-                        })
-                ).catch(e => {
-                    assert.fail(e + '');
+            chai.request(server).get('/api/issues/fcc-project')
+                .end((err, res) => {
+                    assert.propertyVal(res, 'status', 200);
+                    assert.property(res, 'text');
+                    let result;
+                    assert.doesNotThrow(() => result = JSON.parse(res.text));
+                    assert.isArray(result);
+                    assert.isNotEmpty(result);
+                    assert.isAtLeast(result.length, 2, res.text);
                     done();
                 });
         });
