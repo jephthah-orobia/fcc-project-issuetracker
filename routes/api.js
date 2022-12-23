@@ -7,13 +7,13 @@ module.exports = function (app) {
 
   app.route('/api/issues/:project')
 
-    .get(async function (req, res) {
+    .get(function (req, res) {
       let project = req.params.project;
       Project.findOne({ name: project })
         .populate({ path: 'issues', match: req.query })
         .exec((err, proj) => {
           if (err)
-            res.send(err);
+            res.send({ error: err + '' });
           else if (!proj)
             res.json([]);
           else
