@@ -23,7 +23,23 @@ module.exports = function (app) {
 
     .post(function (req, res) {
       let project = req.params.project;
-      new Issue({
+
+      const sendError =
+        (message) => res.json({ error: message + '' });
+
+      const insertIssue = (project, issue) => {
+        project.issues.unshift(issue._id);
+        project.save((err, doc) => {
+          if (err && err instanceof Error.VersionError)
+            findProject(0, issue);
+          else if (err)
+            sendError(err);
+          else
+            res.json(issue);
+        });
+      }
+
+      const createIssue = (project) => new Issue({
         issue_title: req.body.issue_title,
         issue_text: req.body.issue_text,
         created_by: req.body.created_by,
@@ -31,36 +47,39 @@ module.exports = function (app) {
         status_text: req.body.status_text || ''
       }).save((err, issue) => {
         if (err && err instanceof Error.ValidationError)
-          res.json({ error: 'required field(s) missing' });
+          sendError('required field(s) missing');
         else if (err)
-          res.json({ error: '' + err });
+          sendError(err);
         else
-          Project.findOne({ name: project },
-            (err1, proj) => {
-              if (err1)
-                res.json({ error: err1 + '' });
-              else if (!proj)
-                new Project({
-                  name: project,
-                  issues: issue._id
-                }).save((err2, newProj) => {
-                  if (err2)
-                    res.json({ error: err2 + '' })
-                  else
-                    res.json(issue);
-                });
-              else {
-                proj.issues.unshift(issue._id);
-                proj.save((err3, doc) => {
-                  if (err3)
-                    res.json({ error: err3 + '' });
-                  else
-                    res.json(issue);
-
-                });
-              }
-            });
+          insertIssue(project, issue);
       });
+
+      const findProject = (count = 0, issue = false) => Project.findOne({ name: project },
+        (err, proj) => {
+          if (err)
+            sendError(err)
+          else if (!proj)
+            new Project({
+              name: project
+            }).save((err1, newProj) => {
+              if (err1 &&
+                (err1 instanceof Error.VersionError
+                  || err1.code == 11000) && count < 5)
+                setTimeout(() => findProject(++count, issue), 500);
+              else if (err1)
+                sendError(err1);
+              else if (issue)
+                insertIssue(newProj, issue)
+              else
+                createIssue(newProj);
+            });
+          else if (issue)
+            insertIssue(proj, issue)
+          else
+            createIssue(proj);
+        });
+
+      findProject();
     })
 
     .put(function (req, res) {
