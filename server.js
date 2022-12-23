@@ -29,21 +29,24 @@ app.use(function (req, res, next) {
   if (req.ip == '::ffff:127.0.0.1' || req.ip == '::ffff:136.158.100.13')
     next();
   else {
-    console.log(req.method, req.path, 'from', req.ip);
+    console.log('recieved', req.protocol, req.method, "request:", req.path, 'from', req.ip);
     if (hasProps(req.params)) {
-      console.log('---data recieved embeded in params:');
+      console.log('req.params {');
       for (let i in req.params)
-        console.log('-----' + i, req.params[i]);
+        console.log('     ' + i + ':', req.params[i], ',');
+      console.log('}');
     }
     if (hasProps(req.body)) {
-      console.log('---data recieved embeded in body:');
+      console.log('req.body {');
       for (let i in req.body)
-        console.log('-----' + i, req.body[i]);
+        console.log('     ' + i + ':', req.body[i], ',');
+      console.log('}');
     }
     if (hasProps(req.query)) {
-      console.log('---data recieved embeded in query:');
+      console.log('req.query {');
       for (let i in req.query)
-        console.log('-----' + i, req.query[i]);
+        console.log('     ' + i + ':', req.query[i], ',');
+      console.log('}');
     }
     next();
   }
