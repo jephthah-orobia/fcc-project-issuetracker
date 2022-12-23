@@ -1,687 +1,402 @@
-require('dotenv').config();
-
 const chaiHttp = require('chai-http');
 const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
+const mongoose = require('mongoose');
 
 chai.use(chaiHttp);
 
-suite('Functional Tests', function () {
-    suite('FCC required test', function () {
-        let _id;
-        test('Create an issue with every field: POST request to /api/issues/{project}', function (done) {
-            this.timeout(4000);
-            chai.request(server)
-                .post('/api/issues/someproject')
-                .send({
-                    issue_title: "some title",
-                    issue_text: "some text",
-                    created_by: "some user",
-                    assigned_to: "someone",
-                    status_text: "some status text"
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, "issue_title", "some title");
-                    assert.propertyVal(resjson, "issue_text", "some text");
-                    assert.propertyVal(resjson, "created_by", "some user");
-                    assert.propertyVal(resjson, "assigned_to", "someone");
-                    assert.propertyVal(resjson, "status_text", "some status text");
-                    assert.propertyVal(resjson, "open", true);
-                    assert.property(resjson, "created_on");
-                    assert.property(resjson, "updated_on");
-                    assert.property(resjson, "_id");
+suite("Functional Testing", function () {
+
+    const expected_issue_keys = [
+        '_id',
+        'issue_title',
+        'issue_text',
+        'created_by',
+        'open',
+        'assigned_to',
+        'status_text',
+        'created_on',
+        'updated_on'
+    ];
+
+    const expected_successful_operation_keys = ['result', '_id'];
+
+    const faux_issue1 = {
+        issue_title: "Faux Issue Title 2",
+        issue_text: "Functional Test - Every field filled in",
+        created_by: "fCC",
+        assigned_to: "Chai and Mocha",
+        status_text: "User completed all fields"
+    }
+
+    test("#1 Create an issue with every field",
+        function (done) {
+            let test_issue = faux_issue1;
+            chai.request(server).post('/api/issues/fcc-project')
+                .send(test_issue)
+                .end((err, res) => {
+                    assert.propertyVal(res, 'status', 200);
+                    assert.property(res, 'text');
+                    let result;
+                    assert.doesNotThrow(() => result = JSON.parse(res.text));
+                    assert.hasAllKeys(result, expected_issue_keys);
+                    assert.equal(result.issue_title, test_issue.issue_title);
+                    assert.equal(result.issue_text, test_issue.issue_text);
+                    assert.equal(result.created_by, test_issue.created_by);
+                    assert.equal(result.assigned_to, test_issue.assigned_to);
+                    assert.equal(result.status_text, test_issue.status_text);
+                    assert.approximately(new Date(result.created_on).getTime(),
+                        Date.now(), 1000);
+                    assert.approximately(new Date(result.updated_on).getTime(),
+                        Date.now(), 1000);
+                    assert.approximately(new Date(result.created_on).getTime(),
+                        new Date(result.updated_on).getTime(), 50);
+                    assert.isNotEmpty(result._id);
                     done();
                 });
         });
 
-        test('Create an issue with only required fields: POST request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .post('/api/issues/someproject')
-                .send({
-                    issue_title: "some title",
-                    issue_text: "some text",
-                    created_by: "some user"
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, "issue_title", "some title");
-                    assert.propertyVal(resjson, "issue_text", "some text");
-                    assert.propertyVal(resjson, "created_by", "some user");
-                    assert.propertyVal(resjson, "assigned_to", "");
-                    assert.propertyVal(resjson, "status_text", "");
-                    assert.propertyVal(resjson, "open", true);
-                    assert.property(resjson, "created_on");
-                    assert.property(resjson, "updated_on");
-                    assert.property(resjson, "_id");
-                    _id = resjson._id;
+    const faux_issue2 = {
+        issue_title: "Faux Issue Title",
+        issue_text: "Functional Test - Required Fields Only",
+        created_by: "fCC",
+    }
+
+    test("#2 Create an issue with required fields only",
+        function (done) {
+            let test_issue = faux_issue2;
+            chai.request(server).post('/api/issues/fcc-project')
+                .send(test_issue)
+                .end((err, res) => {
+                    assert.propertyVal(res, 'status', 200);
+                    assert.property(res, 'text');
+                    let result;
+                    assert.doesNotThrow(() => result = JSON.parse(res.text));
+                    assert.hasAllKeys(result, expected_issue_keys);
+                    assert.equal(result.issue_title, test_issue.issue_title);
+                    assert.equal(result.issue_text, test_issue.issue_text);
+                    assert.equal(result.created_by, test_issue.created_by);
+                    assert.isEmpty(result.assigned_to);
+                    assert.isEmpty(result.status_text);
+                    assert.approximately(new Date(result.created_on).getTime(),
+                        Date.now(), 600);
+                    assert.approximately(new Date(result.updated_on).getTime(),
+                        Date.now(), 600);
+                    assert.approximately(new Date(result.created_on).getTime(),
+                        new Date(result.updated_on).getTime(), 50);
+                    assert.isNotEmpty(result._id);
                     done();
                 });
         });
 
-        test('Create an issue with missing required fields: POST request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .post('/api/issues/someproject')
-                .send({
-                    issue_title: "some title",
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, "error", "required field(s) missing");
+    const faux_issue3 = {
+        created_by: 'fCC'
+    }
+
+    const expected_failed_post = { error: 'required field(s) missing' };
+    const expected_failed_operation_keys = ['error', '_id'];
+    const expected_missing_id_keys = ['error'];
+
+    test("#3 Create an issue with missing required fields",
+        function (done) {
+            let test_issue = faux_issue3;
+            chai.request(server).post('/api/issues/fcc-project')
+                .send(test_issue)
+                .end((err, res) => {
+                    assert.propertyVal(res, 'status', 200);
+                    assert.property(res, 'text');
+                    let result;
+                    assert.doesNotThrow(() => result = JSON.parse(res.text));
+                    assert.propertyVal(result, 'error', expected_failed_post.error);
                     done();
                 });
         });
 
-        test('View issues on a project: GET request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .get('/api/issues/someject')
-                .end(function (err, res) {
+    const get_issues_test = [{
+        issue_text: 'Get Issues Test',
+        created_by: 'fCC',
+        issue_title: 'Faux Issue 1'
+    }, {
+        issue_text: 'Get Issues Test',
+        created_by: 'fCC',
+        issue_title: 'Faux Issue 2',
+    }, {
+        issue_text: 'Get Issues Test',
+        created_by: 'fCC',
+        issue_title: 'Faux Issue 3',
+    }];
+
+    const post_issue = (issue, project) => new Promise((res, rej) =>
+        chai.request(server)
+            .post('/api/issues/' + project)
+            .send(issue)
+            .then(d => res(d))
+            .catch(e => rej(e)));
+
+    const get_test = 'get_test' + Math.random();
+    test('#4 check project get_test',
+        function (done) {
+            Promise.all(get_issues_test.map(issue => post_issue(issue, get_test)))
+                .then(() =>
+                    chai.request(server).get('/api/issues/' + get_test)
+                        .then(res => {
+                            assert.propertyVal(res, 'status', 200);
+                            assert.property(res, 'text');
+                            let result;
+                            assert.doesNotThrow(() => result = JSON.parse(res.text));
+                            assert.isArray(result);
+                            console.log('done checking #4');
+                            assert.isNotEmpty(result);
+                            assert.equal(result.length, 3, res.text);
+                            done();
+                        })
+                );
+        });
+
+
+    const issues_to_be_filtered = [{
+        issue_title: 'To be Filtered',
+        issue_text: 'Filter Issues Test',
+        created_by: 'Alice',
+        assigned_to: 'Bob',
+    }, {
+        issue_title: 'To be Filtered',
+        issue_text: 'Filter Issues Test',
+        created_by: 'Alice',
+        assigned_to: 'Bob',
+    }, {
+        issue_title: 'To be Filtered',
+        issue_text: 'Filter Issues Test',
+        created_by: 'Alice',
+        assigned_to: 'Eric',
+    }, {
+        issue_title: 'To be Filtered',
+        issue_text: 'Filter Issues Test',
+        created_by: 'Carol',
+        assigned_to: 'Eric',
+    }];
+
+    const get_one_filter = { created_by: 'Alice' };
+    const get_multifilter = { created_by: 'Alice', assigned_to: 'Bob' };
+
+    const filter_test = 'filter_test_' + Math.random();
+    test('#5 View issues on a project with one filter',
+        function (done) {
+            Promise.all(issues_to_be_filtered.map(is => post_issue(is, filter_test)))
+                .then(() =>
+                    chai.request(server).get('/api/issues/' + filter_test + '?' + new URLSearchParams(get_one_filter).toString())
+                        .then(res => {
+                            assert.equal(res.status, 200);
+                            let result;
+                            assert.doesNotThrow(() => result = JSON.parse(res.text));
+                            assert.isArray(result);
+                            assert.isNotEmpty(result);
+                            console.log(res.text);
+                            assert.equal(result.length, 3);
+                            for (let issue of result) {
+                                for (let prop in get_one_filter)
+                                    assert.equal(issue[prop], get_multifilter[prop]);
+                            }
+                            done();
+                        }));
+        });
+
+    test('#6 View issues on a project with multiple filter',
+        function (done) {
+
+            chai.request(server).get('/api/issues/' + filter_test + '?' + new URLSearchParams(get_multifilter).toString())
+                .end((err, res) => {
                     assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.isArray(resjson);
-                    assert.isAtLeast(resjson.length, 0);
-                    if (resjson.length > 0) {
-                        assert.deepProperty('_id');
-                        assert.deepPropertyVal(resjson, "issue_title", "some title");
-                        assert.deepPropertyVal(resjson, "issue_text", "some text");
-                        assert.deepPropertyVal(resjson, "created_by", "some user");
-                        assert.deepPropertyVal(resjson, "assigned_to", "");
-                        assert.deepPropertyVal(resjson, "status_text", "");
-                        assert.deepPropertyVal(resjson, "open", true);
-                        assert.deepProperty(resjson, "created_on");
-                        assert.deepProperty(resjson, "updated_on");
+                    let result;
+                    assert.doesNotThrow(() => result = JSON.parse(res.text));
+                    assert.isArray(result);
+                    assert.isNotEmpty(result);
+                    console.log(res.text);
+                    assert.equal(result.length, 2);
+                    for (let issue of result) {
+                        for (let prop in get_multifilter)
+                            assert.equal(issue[prop], get_multifilter[prop]);
                     }
                     done();
                 });
         });
 
-        test('View issues on a project with one filter: GET request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .get('/api/issues/someject')
-                .send({ open: false })
-                .end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.isArray(resjson);
-                    assert.isAtLeast(resjson.length, 0);
-                    if (resjson.length > 0) {
-                        assert.deepProperty('_id');
-                        assert.deepPropertyVal(resjson, "issue_title", "some title");
-                        assert.deepPropertyVal(resjson, "issue_text", "some text");
-                        assert.deepPropertyVal(resjson, "created_by", "some user");
-                        assert.deepPropertyVal(resjson, "assigned_to", "");
-                        assert.deepPropertyVal(resjson, "status_text", "");
-                        assert.deepPropertyVal(resjson, "open", true);
-                        assert.deepProperty(resjson, "created_on");
-                        assert.deepProperty(resjson, "updated_on");
-                    }
-                    done();
-                });
-        });
+    const issue_to_be_update = {
+        issue_title: 'Issue to be Updated',
+        issue_text: 'Functional Test - Put Target',
+        created_by: 'fCC'
+    }
+    const new_issue_text = 'New Issue Text';
 
-        test('View issues on a project with multiple filters: GET request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .get('/api/issues/someject')
-                .send({ open: true, created_by: "some user" })
-                .end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.isArray(resjson);
-                    assert.isAtLeast(resjson.length, 0);
-                    if (resjson.length > 0) {
-                        assert.deepProperty('_id');
-                        assert.deepPropertyVal(resjson, "issue_title", "some title");
-                        assert.deepPropertyVal(resjson, "issue_text", "some text");
-                        assert.deepPropertyVal(resjson, "created_by", "some user");
-                        assert.deepPropertyVal(resjson, "assigned_to", "");
-                        assert.deepPropertyVal(resjson, "status_text", "");
-                        assert.deepPropertyVal(resjson, "open", true);
-                        assert.deepProperty(resjson, "created_on");
-                        assert.deepProperty(resjson, "updated_on");
-                    }
-                    done();
-                });
-        });
-
-
-        test('Update one field on an issue: PUT request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .put('/api/issues/someproject')
-                .send({
-                    _id: _id,
-                    created_by: 'some one else'
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, "result", "successfully updated");
-                    assert.propertyVal(resjson, "_id", _id);
-                    done();
-                });
-        });
-
-        test('Update multiple fields on an issue: PUT request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .put('/api/issues/someproject')
-                .send({
-                    _id: _id,
-                    open: true,
-                    status_text: "there was some changes and needs to be reopened"
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.hasAllKeys(resjson, ['result', '_id']);
-                    assert.propertyVal(resjson, "result", "successfully updated");
-                    assert.propertyVal(resjson, "_id", _id);
-                    done();
-                });
-        });
-
-        test('Update an issue with missing _id: PUT requrest to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .put('/api/issues/someproject')
-                .send({
-                    open: false
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.hasAllKeys(resjson, ['error']);
-                    assert.propertyVal(resjson, 'error', 'missing _id');
-                    done();
-                });
-        });
-
-        test('Update an issue with no fields to update: PUT requrest to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .put('/api/issues/someproject')
-                .send({
-                    _id: _id
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.hasAllKeys(resjson, ['error', '_id']);
-                    assert.propertyVal(resjson, 'error', 'no update field(s) sent');
-                    assert.propertyVal(resjson, "_id", _id);
-                    done();
-                });
-        });
-
-        test('Update an issue with an invalid _id: PUT requrest to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .put('/api/issues/someproject1')
-                .send({
-                    _id: _id,
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.hasAllKeys(resjson, ['error', '_id']);
-                    assert.propertyVal(resjson, 'error', 'could not update');
-                    assert.propertyVal(resjson, "_id", _id);
-                    done();
-                });
-        });
-
-        test('Delete an issue: DELETE request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .send({
-                    _id: _id,
-                    issue_title: "some title"
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'result', 'successfully deleted');
-                    assert.propertyVal(resjson, "_id", _id);
-                    done();
-                });
-
-        });
-
-        test('Delete an issue with an invalid _id: DELETE request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .send({
-                    _id: '02139s3a'
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'error', 'could not delete');
-                    assert.propertyVal(resjson, "_id", '02139s3a');
-                    done();
-                });
-        });
-
-        test('Delete an issue with an invalid _id: DELETE request to /api/issues/{project} (2)', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .send({
-                    _id: ' --'
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'error', 'could not delete');
-                    done();
-                });
-        });
-
-        test('Delete an issue with missing _id: DELETE request to /api/issues/{project}', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'error', 'missing _id');
-                    done();
-                });
-        });
-
-        test('Delete an issue with missing _id: DELETE request to /api/issues/{project} (2)', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .send({
-                    _id: ''
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'error', 'missing _id');
-                    done();
-                });
-        });
-        test('Delete an issue with missing _id: DELETE request to /api/issues/{project} (3)', function (done) {
-            chai.request(server)
-                .delete('/api/issues/someproject')
-                .send({
-                    open: true
-                }).end(function (err, res) {
-                    assert.equal(res.status, 200);
-                    let resjson;
-                    assert.doesNotThrow(() => resjson = JSON.parse(res.text));
-                    assert.propertyVal(resjson, 'error', 'missing _id');
-                    done()
-                });
-        });
+    test('#7 Update one field on an issue', function (done) {
+        post_issue(issue_to_be_update, 'fcc-project')
+            .then((get_res) => {
+                let issue = JSON.parse(get_res.text);
+                chai.request(server)
+                    .put('/api/issues/fcc-project')
+                    .send({
+                        _id: issue._id,
+                        issue_text: new_issue_text
+                    }).then(res => {
+                        assert.equal(res.status, 200);
+                        let result;
+                        assert.doesNotThrow(() => result = JSON.parse(res.text));
+                        assert.hasAllKeys(result, expected_successful_operation_keys);
+                        assert.equal(result._id, issue._id);
+                        assert.equal(result.result, 'successfully updated');
+                        chai.request(server)
+                            .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: issue._id }))
+                            .then(data => {
+                                let issues = JSON.parse(data.text);
+                                assert.equal(issues[0]._id, issue._id);
+                                assert.equal(issues[0].issue_text, new_issue_text);
+                                assert.notEqual(issues[0].issue_text, issue_to_be_update.issue_text)
+                                issue_to_be_update._id = issue._id;
+                                done();
+                            })
+                            .catch(e => {
+                                assert.fail(e);
+                                done();
+                            });
+                    }).catch(e => {
+                        assert.fail(e);
+                        done();
+                    });
+            }).catch(e => {
+                assert.fail(e);
+                done();
+            });
     });
 
-    if (process.env.IS_LOCAL)
-        // this test will only run on when on my local machine
-        // so that on replit fcc test will not run this on project submission.
-        suite('Additional Test - Sequential Test', function () {
-            const seed = () => Math.round(Math.random() * 4);
+    const new_issue_title = 'Issue to be Deleted';
+    const new_issue_text2 = 'Functional Test - Delete target';
 
-            const project1 = 'seqtest' + seed();
-
-            const project1_issues = [];
-
-            const project2 = 'seqtes' + seed();
-            const project2_issues = [];
-
-            const issue1 = {
-                issue_title: 'There was a problem 1',
-                issue_text: 'Do not change this',
-                created_by: 'john cruz',
-                assigned_to: 'fred smith',
-                status_text: 'ongoing'
-            };
-
-            const issue2 = {
-                issue_title: 'Required Only',
-                issue_text: 'try to update status text of this',
-                created_by: 'grace wan'
-            };
-
-            const issue3 = {
-                issue_title: 'Incomplete',
-                issue_text: 'This issue is lacking creator'
-            };
-
-            const issue4 = {
-                issue_title: 'No text, but with optional field',
-                assigned_to: 'not you'
-            };
-
-            const issue5 = {
-                issue_title: 'To Be Updated',
-                issue_text: 'try to make some chanages to this',
-                created_by: 'you of course'
-            }
-
-            const expected_issue_keys = [
-                '_id',
-                'issue_title',
-                'issue_text',
-                'created_by',
-                'open',
-                'assigned_to',
-                'status_text',
-                'created_on',
-                'updated_on'
-            ];
-
-            test('Check project1, must be empty', function (done) {
+    test("#8 Update multiple fields on an issue", function (done) {
+        chai.request(server)
+            .put('/api/issues/fcc-project')
+            .send({
+                _id: issue_to_be_update._id,
+                issue_title: new_issue_title,
+                issue_text: new_issue_text2,
+            }).then(res => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_successful_operation_keys);
+                assert.equal(result._id, issue_to_be_update._id);
+                assert.equal(result.result, 'successfully updated');
                 chai.request(server)
-                    .get('/api/issues/' + project1)
-                    .end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let issues;
-                        assert.doesNotThrow(() => issues = JSON.parse(res.text));
-                        assert.isArray(issues);
-                        assert.isEmpty(issues);
+                    .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: issue_to_be_update._id }))
+                    .then(data => {
+                        let issues = JSON.parse(data.text);
+                        assert.equal(issues[0]._id, issue_to_be_update._id);
+                        assert.equal(issues[0].issue_text, new_issue_text2);
+                        assert.equal(issues[0].issue_title, new_issue_title);
+                        assert.notEqual(issues[0].issue_text, issue_to_be_update.issue_text)
+                        done();
+                    })
+                    .catch(e => {
+                        assert.fail(e);
                         done();
                     });
+            }).catch(e => {
+                assert.fail(e);
+                done();
             });
+    });
 
-            test('Create an issue on project1 with every field', function (done) {
+    test("#9 Update an issue with missing _id", function (done) {
+        chai.request(server)
+            .put('/api/issues/fcc-project')
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_missing_id_keys);
+                assert.equal(result.error, 'missing _id');
+                done();
+            })
+    });
+
+    test("#10 Update an issue with no fields to update", function (done) {
+        chai.request(server)
+            .put('/api/issues/fcc-project')
+            .send({ _id: issue_to_be_update._id })
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_failed_operation_keys);
+                assert.equal(result.error, 'no update field(s) sent');
+                assert.equal(result._id, issue_to_be_update._id);
+                done();
+            })
+    });
+
+    test("#11 Update an issue with an invalid _id", function (done) {
+        chai.request(server)
+            .put('/api/issues/fcc-project')
+            .send({ _id: "556213" })
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_failed_operation_keys);
+                assert.equal(result.error, 'could not update');
+                assert.equal(result._id, "556213");
+                done();
+            })
+    });
+
+    test("#12 Delete an issue", function (done) {
+        chai.request(server)
+            .delete('/api/issues/fcc-project')
+            .send({ _id: issue_to_be_update._id })
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_successful_operation_keys);
+                assert.equal(result.result, 'successfully deleted');
+                assert.equal(result._id, issue_to_be_update._id);
                 chai.request(server)
-                    .post('/api/issues/' + project1)
-                    .send(issue1).end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let iss;
-                        assert.doesNotThrow(() => iss = JSON.parse(res.text));
-                        assert.isNotArray(iss);
-                        assert.hasAllKeys(iss, expected_issue_keys);
-                        assert.propertyVal(iss, 'issue_title', issue1.issue_title);
-                        assert.propertyVal(iss, 'issue_text', issue1.issue_text);
-                        assert.propertyVal(iss, 'created_by', issue1.created_by);
-                        assert.propertyVal(iss, 'open', true);
-                        assert.propertyVal(iss, 'assigned_to', issue1.assigned_to);
-                        assert.propertyVal(iss, 'status_text', issue1.status_text);
-                        assert.approximately((new Date(iss.created_on)).getTime(), Date.now(), 2000);
-                        assert.approximately((new Date(iss.updated_on)).getTime(), Date.now(), 2000);
-                        issue1._id = iss._id;
+                    .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: issue_to_be_update._id }))
+                    .end((err1, res1) => {
+                        assert.equal(res1.status, 200);
+                        let result = JSON.parse(res1.text);
+                        assert.isArray(result);
+                        assert.isEmpty(result);
                         done();
                     });
-            });
+            })
+    });
 
-            test('Create an issue2 on project1 with required field only', function (done) {
-                chai.request(server)
-                    .post('/api/issues/' + project1)
-                    .send(issue2).end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let iss;
-                        assert.doesNotThrow(() => iss = JSON.parse(res.text));
-                        assert.isNotArray(iss);
-                        assert.hasAllKeys(iss, expected_issue_keys);
-                        assert.propertyVal(iss, 'issue_title', issue2.issue_title);
-                        assert.propertyVal(iss, 'issue_text', issue2.issue_text);
-                        assert.propertyVal(iss, 'created_by', issue2.created_by);
-                        assert.propertyVal(iss, 'open', true);
-                        assert.propertyVal(iss, 'assigned_to', '');
-                        assert.propertyVal(iss, 'status_text', '');
-                        assert.approximately((new Date(iss.created_on)).getTime(), Date.now(), 2000);
-                        assert.approximately((new Date(iss.updated_on)).getTime(), Date.now(), 2000);
-                        issue2._id = iss._id;
-                        done();
-                    });
-            });
+    test("#13 Delete an issue with an invalid", function (done) {
+        chai.request(server)
+            .delete('/api/issues/fcc-project')
+            .send({ _id: '5f665eb46e296f6b9b6a504d', issue_text: 'New Issue Text' })
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_failed_operation_keys);
+                assert.equal(result.error, 'could not delete');
+                assert.equal(result._id, '5f665eb46e296f6b9b6a504d');
+                done();
+            })
+    });
 
-            test('Create an issue5 on project2 with required field only', function (done) {
-                chai.request(server)
-                    .post('/api/issues/' + project2)
-                    .send(issue5).end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let iss;
-                        assert.doesNotThrow(() => iss = JSON.parse(res.text));
-                        assert.isNotArray(iss);
-                        assert.hasAllKeys(iss, expected_issue_keys);
-                        assert.propertyVal(iss, 'issue_title', issue5.issue_title);
-                        assert.propertyVal(iss, 'issue_text', issue5.issue_text);
-                        assert.propertyVal(iss, 'created_by', issue5.created_by);
-                        assert.propertyVal(iss, 'open', true);
-                        assert.propertyVal(iss, 'assigned_to', '');
-                        assert.propertyVal(iss, 'status_text', '');
-                        assert.approximately((new Date(iss.created_on)).getTime(), Date.now(), 2000);
-                        assert.approximately((new Date(iss.updated_on)).getTime(), Date.now(), 2000);
-                        issue5._id = iss._id;
-                        issue5.created_on = iss.created_on;
-                        done();
-                    });
-            });
-
-            test('Create an issue3 on project1 with missing required fields', function (done) {
-                chai.request(server)
-                    .post('/api/issues/' + project1)
-                    .send(issue3).end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let iss;
-                        assert.doesNotThrow(() => iss = JSON.parse(res.text));
-                        assert.hasAllKeys(iss, ['error']);
-                        assert.propertyVal(iss, 'error', 'required field(s) missing');
-                        done();
-                    });
-            });
-            test('Create an issue4 on project1 with missing required fields', function (done) {
-                chai.request(server)
-                    .post('/api/issues/' + project1)
-                    .send(issue3).end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let iss;
-                        assert.doesNotThrow(() => iss = JSON.parse(res.text));
-                        assert.hasAllKeys(iss, ['error']);
-                        assert.propertyVal(iss, 'error', 'required field(s) missing');
-                        done();
-                    });
-            });
-
-            test('Check project1 issues, there must be only be 2 issues', function (done) {
-                chai.request(server)
-                    .get('/api/issues/' + project1)
-                    .end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let issues;
-                        assert.doesNotThrow(() => issues = JSON.parse(res.text));
-                        assert.isArray(issues);
-                        assert.isNotEmpty(issues);
-                        assert.equal(issues.length, 2);
-                        for (let iss of issues) {
-                            assert.hasAllKeys(iss, expected_issue_keys);
-                            assert.isTrue(iss.open, true);
-                            project1_issues.push(iss);
-                        }
-                        assert.propertyVal(issues[1], '_id', issue1._id);
-                        assert.propertyVal(issues[0], '_id', issue2._id);
-                        done();
-                    });
-            });
-
-            test('update issue5, add the optional assigned to', function (done) {
-                chai.request(server).put('/api/issues/' + project2)
-                    .send({ _id: issue5._id, assigned_to: 'new guy' })
-                    .end(function (err, res) {
-                        issue5.possible_updated_on = new Date();
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'result']);
-                        assert.propertyVal(result, 'result', 'successfully updated');
-                        assert.propertyVal(result, '_id', issue5._id);
-                        done();
-                    });
-            });
-
-            test('Delete issue1 in project1', function (done) {
-                chai.request(server).delete('/api/issues/' + project1)
-                    .send({ _id: issue1._id })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'result']);
-                        assert.equal(result.result, 'successfully deleted');
-                        assert.propertyVal(result, '_id', issue1._id);
-                        done();
-                    });
-            });
-
-            test('Delete issue2 in project1', function (done) {
-                chai.request(server).delete('/api/issues/' + project1)
-                    .send({ _id: issue2._id })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'result']);
-                        assert.equal(result.result, 'successfully deleted');
-                        assert.propertyVal(result, '_id', issue2._id);
-                        done();
-                    });
-            });
-
-            test('Check project1, must be empty', function (done) {
-                chai.request(server)
-                    .get('/api/issues/' + project1)
-                    .end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let issues;
-                        assert.doesNotThrow(() => issues = JSON.parse(res.text));
-                        assert.isArray(issues);
-                        assert.isEmpty(issues);
-                        done();
-                    });
-            });
-
-            test('update issue5, with no field changes', function (done) {
-                chai.request(server).put('/api/issues/' + project2)
-                    .send({ _id: issue5._id, issue_title: issue5.issue_title, issue_text: issue5.issue_text, assigned_to: "new guy", open: true })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'no update field(s) sent');
-                        assert.propertyVal(result, '_id', issue5._id);
-                        done();
-                    });
-            });
-
-            test('close issue', function (done) {
-                chai.request(server).put('/api/issues/' + project2)
-                    .send({ _id: issue5._id, open: false })
-                    .end(function (err, res) {
-                        issue5.possible_updated_on = new Date();
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'result']);
-                        assert.propertyVal(result, 'result', 'successfully updated');
-                        assert.propertyVal(result, '_id', issue5._id);
-                        done();
-                    });
-            });
-
-            test('a closed issue cannot be updated', function (done) {
-                chai.request(server).put('/api/issues/' + project2)
-                    .send({ _id: issue5._id, issue_title: "new title" })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'could not update');
-                        assert.propertyVal(result, '_id', issue5._id);
-                        done();
-                    });
-            });
-
-            test('Try to update a non existing issue', function (done) {
-                chai.request(server).put('/api/issues/' + project1)
-                    .send({ _id: issue5._id, assigned_to: 'new guy' })
-                    .end(function (err, res) {
-                        issue5.possible_updated_on = new Date();
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'could not update');
-                        assert.propertyVal(result, '_id', issue5._id);
-                        done();
-                    });
-            });
-
-            test('Try to update without providing _id', function (done) {
-                chai.request(server).put('/api/issues/' + project2)
-                    .send({ assigned_to: 'new guy' })
-                    .end(function (err, res) {
-                        issue5.possible_updated_on = new Date();
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['error']);
-                        assert.propertyVal(result, 'error', 'missing _id');
-                        done();
-                    });
-            });
-
-            test('Delete non existing issue in project1', function (done) {
-                chai.request(server).delete('/api/issues/' + project1)
-                    .send({ _id: issue2._id })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'could not delete');
-                        assert.propertyVal(result, '_id', issue2._id);
-                        done();
-                    });
-            });
-
-            test('Delete non existing issue in project2', function (done) {
-                chai.request(server).delete('/api/issues/' + project2)
-                    .send({ _id: issue2._id })
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['_id', 'error']);
-                        assert.propertyVal(result, 'error', 'could not delete');
-                        assert.propertyVal(result, '_id', issue2._id);
-                        done();
-                    });
-            });
-
-            test('Delete an issue without _id in project2', function (done) {
-                chai.request(server).delete('/api/issues/' + project2)
-                    .end(function (err, res) {
-                        assert.equal(res.status, 200);
-                        let result;
-                        assert.doesNotThrow(() => result = JSON.parse(res.text));
-                        assert.hasAllKeys(result, ['error']);
-                        assert.propertyVal(result, 'error', 'missing _id');
-                        done();
-                    });
-            });
-
-            test('Check project2, must be Not Empty, with issue5', function (done) {
-                chai.request(server)
-                    .get('/api/issues/' + project2)
-                    .end((err, res) => {
-                        assert.equal(res.status, 200);
-                        let issues;
-                        assert.doesNotThrow(() => issues = JSON.parse(res.text));
-                        assert.isArray(issues);
-                        assert.isNotEmpty(issues);
-                        assert.equal(issues.length, 1);
-                        assert.hasAllKeys(issues[0], expected_issue_keys);
-                        assert.equal(issues[0].created_on, issue5.created_on);
-                        assert.approximately((new Date(issues[0].updated_on)).getTime(), issue5.possible_updated_on.getTime(), 2000);
-                        done();
-                    });
-            });
-        });
+    test("#14 Delete an issue with missing _id", function (done) {
+        chai.request(server)
+            .delete('/api/issues/fcc-project')
+            .end((err, res) => {
+                assert.equal(res.status, 200);
+                let result;
+                assert.doesNotThrow(() => result = JSON.parse(res.text));
+                assert.hasAllKeys(result, expected_missing_id_keys);
+                assert.equal(result.error, 'missing _id');
+                done();
+            })
+    });
 });
