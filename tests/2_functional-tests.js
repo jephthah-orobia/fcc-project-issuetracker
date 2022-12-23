@@ -150,11 +150,11 @@ suite("Functional Testing", function () {
                             assert.equal(result.length, 3, res.text);
                             done();
                         }).catch(e => {
-                            res.json({ error: e + '' });
+                            assert.fail(e + '');
                             done();
                         })
                 ).catch(e => {
-                    res.json({ error: e + '' });
+                    assert.fail(e + '');
                     done();
                 });
         });
@@ -204,11 +204,11 @@ suite("Functional Testing", function () {
                             }
                             done();
                         }).catch(e => {
-                            res.json({ error: e + '' });
+                            assert.fail(e + '');
                             done();
                         })
                 ).catch(e => {
-                    res.json({ error: e + '' });
+                    assert.fail(e + '');
                     done();
                 });
         });
