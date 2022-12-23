@@ -83,6 +83,16 @@ module.exports = function (app) {
     })
 
     .put(function (req, res) {
+      const failedToUpdate = {
+        error: 'could not update',
+        _id: req.body._id
+      };
+
+      const noFields = {
+        error: 'no update field(s) sent',
+        _id: req.body._id
+      };
+
       // check if _id is available
       if (!req.body._id || req.body._id == '')
         res.json({ error: 'missing _id' });
@@ -92,18 +102,12 @@ module.exports = function (app) {
           issues: req.body._id
         }, (fpEr, project) => {
           if (fpEr || !project)
-            res.json({
-              error: 'could not update',
-              _id: req.body._id
-            });
+            res.json(failedToUpdate);
           else
             Issue.findById(req.body._id,
               (err, issue) => {
                 if (err || !issue || !issue.open) {
-                  res.json({
-                    error: 'could not update',
-                    _id: req.body._id
-                  });
+                  res.json(failedToUpdate);
                 }
                 else {
                   for (let prop in req.body)
@@ -116,17 +120,11 @@ module.exports = function (app) {
                       ))
                       issue[prop] = req.body[prop];
                   if (!issue.isModified())
-                    res.json({
-                      error: 'no update field(s) sent',
-                      _id: req.body._id
-                    });
+                    res.json(noFields);
                   else
                     issue.save(saveErr => {
                       if (saveErr)
-                        res.json({
-                          error: 'could not update',
-                          _id: req.body._id
-                        });
+                        res.json(failedToUpdate);
                       else
                         res.json({
                           result: 'successfully updated',
