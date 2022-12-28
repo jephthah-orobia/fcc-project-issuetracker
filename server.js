@@ -2,19 +2,16 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const expect = require('chai').expect;
 const cors = require('cors');
 require('dotenv').config();
 
 const apiRoutes = require('./routes/api.js');
 const fccTestingRoutes = require('./routes/fcctesting.js');
-const runner = require('./test-runner');
 const mongoose = require('mongoose');
-const hasProps = (obj) => {
-  for (let l in obj)
-    return true;
-  return false
-}
+mongoose.set('strictQuery', false);
+const { setDebugging, logRequest, logParams, logBody, logQuery } = require('./log-utils');
+
+setDebugging(process.env.DEBUG == 'yes');
 
 let app = express();
 
@@ -24,33 +21,6 @@ app.use(cors({ origin: '*' })); //For FCC testing purposes only
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(function (req, res, next) {
-  if (req.ip == '::ffff:127.0.0.1' || req.ip == '::ffff:136.158.100.13')
-    next();
-  else {
-    console.log('recieved', req.protocol, req.method, "request:", req.path, 'from', req.ip);
-    if (hasProps(req.params)) {
-      console.log('req.params {');
-      for (let i in req.params)
-        console.log('     ' + i + ':', req.params[i], ',');
-      console.log('}');
-    }
-    if (hasProps(req.body)) {
-      console.log('req.body {');
-      for (let i in req.body)
-        console.log('     ' + i + ':', req.body[i], ',');
-      console.log('}');
-    }
-    if (hasProps(req.query)) {
-      console.log('req.query {');
-      for (let i in req.query)
-        console.log('     ' + i + ':', req.query[i], ',');
-      console.log('}');
-    }
-    next();
-  }
-});
 
 //Sample front-end
 app.route('/:project/')
@@ -68,6 +38,11 @@ app.route('/')
 //For FCC testing purposes
 fccTestingRoutes(app);
 
+
+app.use(logRequest,
+  logQuery,
+  logParams,
+  logBody)
 //Routing for API 
 apiRoutes(app);
 
