@@ -2,6 +2,7 @@
 const { Error } = require('mongoose');
 const Issue = require('../datastore/issueSchema');
 const Project = require('../datastore/projectSchema');
+const { logPropsOf } = require('../log-utils');
 
 module.exports = function (app) {
 
@@ -93,21 +94,31 @@ module.exports = function (app) {
         _id: req.body._id
       };
 
+      const success = {
+        result: 'successfully updated',
+        _id: req.body._id
+      };
+
+      const send = (result) => {
+        logPropsOf('<< result: ', result);
+        res.json(result);
+      }
+
       // check if _id is available
       if (!req.body._id || req.body._id == '')
-        res.json({ error: 'missing _id' });
+        send({ error: 'missing _id' });
       else
         Project.findOne({
           name: req.params.project,
           issues: req.body._id
         }, (fpEr, project) => {
           if (fpEr || !project)
-            res.json(failedToUpdate);
+            send(failedToUpdate);
           else
             Issue.findById(req.body._id,
               (err, issue) => {
                 if (err || !issue || !issue.open) {
-                  res.json(failedToUpdate);
+                  send(failedToUpdate);
                 }
                 else {
                   for (let prop in req.body)
@@ -120,16 +131,13 @@ module.exports = function (app) {
                       ))
                       issue[prop] = req.body[prop];
                   if (!issue.isModified())
-                    res.json(noFields);
+                    send(noFields);
                   else
                     issue.save(saveErr => {
                       if (saveErr)
-                        res.json(failedToUpdate);
+                        send(failedToUpdate);
                       else
-                        res.json({
-                          result: 'successfully updated',
-                          _id: req.body._id
-                        });
+                        send(success);
                     });
                 }
               });
