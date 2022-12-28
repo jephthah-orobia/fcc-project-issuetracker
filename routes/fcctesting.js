@@ -35,7 +35,7 @@ module.exports = function (app) {
 
   app.route('/_api/server.js')
     .get(function (req, res, next) {
-      console.log('requested server.js');
+      console.log('requested');
       fs.readFile(__dirname + '/server.js', function (err, data) {
         if (err) return next(err);
         res.send(data.toString());
@@ -43,7 +43,7 @@ module.exports = function (app) {
     });
   app.route('/_api/routes/api.js')
     .get(function (req, res, next) {
-      console.log('requested api.js');
+      console.log('requested');
       fs.readFile(__dirname + '/routes/api.js', function (err, data) {
         if (err) return next(err);
         res.type('txt').send(data.toString());
@@ -51,32 +51,39 @@ module.exports = function (app) {
     });
 
   app.get('/_api/get-tests', cors(), function (req, res, next) {
-    console.log('requested get test');
+    console.log('requested');
     if (process.env.NODE_ENV === 'test') {
-      //Start our server and tests!
       console.log('Running Tests...');
       try {
         runner.run();
       } catch (e) {
         console.log('Tests are not valid:');
         console.error(e);
-      }
-      return next();
-    }
-    res.json({ status: 'unavailable' });
-  },
-    function (req, res, next) {
-      if (!runner.report) {
-        console.log('no runner report found');
+      } finally {
         return next();
       }
+    }
+    else
+      res.json({ status: 'unavailable' });
+  },
+    function (req, res, next) {
+      if (!runner.report) return next();
       res.json(testFilter(runner.report, req.query.type, req.query.n));
     },
     function (req, res) {
       runner.on('done', function (report) {
-        res.json(testFilter(runner.report, req.query.type, req.query.n));
+        process.nextTick(() => res.json(testFilter(runner.report, req.query.type, req.query.n)));
       });
     });
+  app.get('/_api/app-info', function (req, res) {
+    let hs = Object.keys(res._headers)
+      .filter(h => !h.match(/^access-control-\w+/));
+    let hObj = {};
+    hs.forEach(h => { hObj[h] = res._headers[h] });
+    delete res._headers['strict-transport-security'];
+    res.json({ headers: hObj });
+  });
+
 };
 
 function testFilter(tests, type, n) {
