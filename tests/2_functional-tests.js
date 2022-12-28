@@ -77,7 +77,7 @@ suite("Functional Testing", function () {
         test("#1 Create an issue with every field",
             function (done) {
                 let test_issue = faux_issue1;
-                chai.request(server).post('/api/issues/fcc-project')
+                chai.request(server).post('/api/issues/test-project')
                     .send({
                         issue_title: "Faux Issue Title 2",
                         issue_text: "Functional Test - Every field filled in",
@@ -108,7 +108,7 @@ suite("Functional Testing", function () {
         test("#2 Create an issue with required fields only",
             function (done) {
                 let test_issue = faux_issue2;
-                chai.request(server).post('/api/issues/fcc-project')
+                chai.request(server).post('/api/issues/test-project')
                     .send({
                         issue_title: "Field To Be Updated and Deleted",
                         issue_text: "Functional Test - Required Fields Only",
@@ -137,7 +137,7 @@ suite("Functional Testing", function () {
         test("#3 Create an issue with missing required fields",
             function (done) {
                 let test_issue = faux_issue3;
-                chai.request(server).post('/api/issues/fcc-project')
+                chai.request(server).post('/api/issues/test-project')
                     .send(test_issue)
                     .end((err, res) => {
                         assert.propertyVal(res, 'status', 200);
@@ -153,7 +153,7 @@ suite("Functional Testing", function () {
     suite('ROUTE GET:/api/issues/{project} test', function () {
         test('#4 check project get_test',
             function (done) {
-                chai.request(server).get('/api/issues/fcc-project')
+                chai.request(server).get('/api/issues/test-project')
                     .end((err, res) => {
                         assert.propertyVal(res, 'status', 200);
                         assert.property(res, 'text');
@@ -169,7 +169,7 @@ suite("Functional Testing", function () {
         test('#5 View issues on a project with one filter',
             function (done) {
                 const runTest = () =>
-                    chai.request(server).get('/api/issues/fcc-project?created_by=Aba')
+                    chai.request(server).get('/api/issues/test-project?created_by=Aba')
                         .end((err, res) => {
                             assert.equal(res.status, 200);
                             assert.isArray(res.body);
@@ -190,7 +190,7 @@ suite("Functional Testing", function () {
         test('#6 View issues on a project with multipler filter',
             function (done) {
                 const runTest = () =>
-                    chai.request(server).get('/api/issues/fcc-project?' + new URLSearchParams({ created_by: 'fCC', issue_title: 'Faux Issue Title 2' }))
+                    chai.request(server).get('/api/issues/test-project?' + new URLSearchParams({ created_by: 'fCC', issue_title: 'Faux Issue Title 2' }))
                         .end((err, res) => {
                             assert.equal(res.status, 200);
                             assert.isArray(res.body);
@@ -214,7 +214,7 @@ suite("Functional Testing", function () {
     suite('ROUTE PUT /api/issues/{project} test', function () {
         test('#7 Update one field on an issue', function (done) {
             const runTest = () => chai.request(server)
-                .put('/api/issues/fcc-project')
+                .put('/api/issues/test-project')
                 .send({
                     _id: faux_issue2.id,
                     issue_text: new_issue_text
@@ -225,7 +225,7 @@ suite("Functional Testing", function () {
                     assert.equal(res.body._id, faux_issue2.id);
                     assert.equal(res.body.result, 'successfully updated');
                     chai.request(server)
-                        .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: faux_issue2.id }))
+                        .get('/api/issues/test-project?' + new URLSearchParams({ _id: faux_issue2.id }))
                         .then(data => {
                             let issues = data.body;
                             assert.equal(issues[0]._id, faux_issue2.id);
@@ -254,7 +254,7 @@ suite("Functional Testing", function () {
         test("#8 Update multiple fields on an issue", function (done) {
             const runTest = () =>
                 chai.request(server)
-                    .put('/api/issues/fcc-project')
+                    .put('/api/issues/test-project')
                     .send({
                         _id: faux_issue2.id,
                         issue_title: new_issue_title,
@@ -266,7 +266,7 @@ suite("Functional Testing", function () {
                         assert.equal(res.body._id, faux_issue2.id);
                         assert.equal(res.body.result, 'successfully updated');
                         chai.request(server)
-                            .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: faux_issue2.id }))
+                            .get('/api/issues/test-project?' + new URLSearchParams({ _id: faux_issue2.id }))
                             .then(data => {
                                 let issues = data.body;
                                 assert.equal(issues[0]._id, faux_issue2.id);
@@ -292,7 +292,7 @@ suite("Functional Testing", function () {
 
         test("#9 Update an issue with missing _id", function (done) {
             chai.request(server)
-                .put('/api/issues/fcc-project')
+                .put('/api/issues/test-project')
                 .end((err, res) => {
                     assert.equal(res.status, 200);
                     assert.isObject(res.body);
@@ -305,7 +305,7 @@ suite("Functional Testing", function () {
         test("#10 Update an issue with no fields to update", function (done) {
             const runTest = () =>
                 chai.request(server)
-                    .put('/api/issues/fcc-project')
+                    .put('/api/issues/test-project')
                     .send({ _id: faux_issue2.id })
                     .end((err, res) => {
                         assert.equal(res.status, 200);
@@ -323,7 +323,7 @@ suite("Functional Testing", function () {
 
         test("#11 Update an issue with an invalid _id", function (done) {
             chai.request(server)
-                .put('/api/issues/fcc-project')
+                .put('/api/issues/test-project')
                 .send({ _id: "556213", status_text: "some new new" })
                 .end((err, res) => {
                     assert.equal(res.status, 200);
@@ -342,7 +342,7 @@ suite("Functional Testing", function () {
         test("#12 Delete an issue", function (done) {
             const runTest = () =>
                 chai.request(server)
-                    .delete('/api/issues/fcc-project')
+                    .delete('/api/issues/test-project')
                     .send({ _id: faux_issue2.id })
                     .end((err, res) => {
                         assert.equal(res.status, 200);
@@ -351,7 +351,7 @@ suite("Functional Testing", function () {
                         assert.equal(res.body.result, 'successfully deleted');
                         assert.equal(res.body._id, faux_issue2.id);
                         chai.request(server)
-                            .get('/api/issues/fcc-project?' + new URLSearchParams({ _id: faux_issue2.id }))
+                            .get('/api/issues/test-project?' + new URLSearchParams({ _id: faux_issue2.id }))
                             .end((err1, res1) => {
                                 assert.equal(res1.status, 200);
                                 assert.isArray(res1.body);
@@ -367,7 +367,7 @@ suite("Functional Testing", function () {
 
         test("#13 Delete an issue with an invalid", function (done) {
             chai.request(server)
-                .delete('/api/issues/fcc-project')
+                .delete('/api/issues/test-project')
                 .send({ _id: '5f665eb46e296f6b9b6a504d', issue_text: 'New Issue Text' })
                 .end((err, res) => {
                     assert.equal(res.status, 200);
@@ -381,7 +381,7 @@ suite("Functional Testing", function () {
 
         test("#14 Delete an issue with missing _id", function (done) {
             chai.request(server)
-                .delete('/api/issues/fcc-project')
+                .delete('/api/issues/test-project')
                 .end((err, res) => {
                     assert.equal(res.status, 200);
                     assert.isObject(res.body);
