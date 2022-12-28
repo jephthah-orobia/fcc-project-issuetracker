@@ -122,7 +122,7 @@ module.exports = function (app) {
                 }
                 else {
                   for (let prop in req.body)
-                    if (!(prop in ['_id', 'created_on', 'updated_on'])
+                    if (!(prop in { '_id': 1, 'created_on': 1, 'updated_on': 1 })
                       && (
                         (typeof req.body[prop] == 'string' && req.body[prop] != ''
                           && prop in issue && req.body[prop] != issue[prop])
