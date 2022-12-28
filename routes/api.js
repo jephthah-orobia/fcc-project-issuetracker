@@ -108,7 +108,7 @@ module.exports = function (app) {
       // check if _id is available
       if (!req.body._id || req.body._id == '')
         send({ error: 'missing _id' });
-      else if (hasPropsExcept(req.body, ['_id']))
+      else if (!hasPropsExcept(req.body, ['_id']))
         send(noFields);
       else
         Project.findOne({
