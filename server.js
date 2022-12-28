@@ -58,6 +58,17 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     console.log("Connected to database");
     const listener = app.listen(process.env.PORT || 3000, function () {
       console.log('Your app is listening on port ' + listener.address().port);
+      if (process.env.NODE_ENV === 'test') {
+        console.log('Running Tests...');
+        setTimeout(function () {
+          try {
+            runner.run();
+          } catch (e) {
+            console.log('Tests are not valid:');
+            console.error(e);
+          }
+        }, 5000);
+      }
     });
   }).catch(e => {
     console.error(e);

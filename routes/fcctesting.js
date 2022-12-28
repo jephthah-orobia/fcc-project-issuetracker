@@ -53,15 +53,7 @@ module.exports = function (app) {
   app.get('/_api/get-tests', cors(), function (req, res, next) {
     console.log('requested');
     if (process.env.NODE_ENV === 'test') {
-      console.log('Running Tests...');
-      try {
-        runner.run();
-      } catch (e) {
-        console.log('Tests are not valid:');
-        console.error(e);
-      } finally {
-        return next();
-      }
+      return next();
     }
     else
       res.json({ status: 'unavailable' });
