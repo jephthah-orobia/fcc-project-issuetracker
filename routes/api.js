@@ -3,6 +3,7 @@ const { Error } = require('mongoose');
 const Issue = require('../datastore/issueSchema');
 const Project = require('../datastore/projectSchema');
 const { logPropsOf } = require('../log-utils');
+const { hasPropsExcept } = require('../obj-utils');
 
 module.exports = function (app) {
 
@@ -107,6 +108,8 @@ module.exports = function (app) {
       // check if _id is available
       if (!req.body._id || req.body._id == '')
         send({ error: 'missing _id' });
+      else if (hasPropsExcept(req.body, ['_id']))
+        send(noFields);
       else
         Project.findOne({
           name: req.params.project,
